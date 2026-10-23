@@ -4,7 +4,7 @@ package marsops.personnel;
 
 
 
-public class CrewMember {
+public abstract class CrewMember {
 
     private String name;
     private String id;
@@ -78,6 +78,7 @@ public class CrewMember {
         this.available = available;
     }
     
-
+    //--> Abstract method that will be overrided <-- 
+    public abstract void performDuty();
 
 }
