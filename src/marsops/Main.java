@@ -1,9 +1,8 @@
 package marsops;
 
-import marsops.personnel.CrewMember;
-import marsops.personnel.Engineer;
-import marsops.personnel.MedicalOfficer;
-import marsops.personnel.Scientist;
+import marsops.personnel.*;
+import marsops.robotics.*;
+
 
 public class Main {
     public static void main(String[] args) {
@@ -13,6 +12,14 @@ public class Main {
         S.performDuty();
         E.performDuty();
         M.performDuty();
+
+        Robot ER = new ExplorationRover(70, "Healthy", "location1");
+        Robot RR = new RepairRobot(100, "Healthy", "location2");
+        Robot DR = new Drone(50, "Healthy", "location3");
+        ER.performTask();
+        RR.performTask();
+        DR.performTask();
+
 
     }
 }
