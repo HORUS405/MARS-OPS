@@ -9,4 +9,5 @@ public class Laboratory extends Facility {
     }
 
     
+    
 }

@@ -59,8 +59,8 @@ public class MarsColony {
         else facilities.add(facility);
     }
 
-    public double getTotalResourceQuantity(ResourceType type) {
-    double total = 0;
+    public int getTotalResourceQuantity(ResourceType type) {
+    int total = 0;
 
     for (Facility facility : facilities) {
         if (facility.getFacilityOperationalStatus()
@@ -76,32 +76,6 @@ public class MarsColony {
 
     return total;
 }
-
-
-
-    public void consumeResource(ResourceType type, double quantity){
-        if(quantity < 0) throw new IllegalArgumentException("Enter a valid quatity greater that 0");
-        if(type == null) throw new IllegalArgumentException("Enter a valid resource type");
-        double amount = getTotalResourceQuantity(type);
-        double remaining = quantity;
-        if(quantity > amount) throw new IllegalArgumentException("Insuffcient amount of resource ");
-
-        for (Facility facility : facilities) {
-            if (facility.getFacilityOperationalStatus()
-                    .equalsIgnoreCase("Operational")) {
-
-                for (Resource resource : facility.getResources()) {
-                    if (resource.getType() == type && remaining > 0) {
-                        double deduced = Math.min(resource.getQuantity(), remaining);
-                        resource.setQuantity(resource.getQuantity()-deduced);
-                        remaining -= deduced;
-                    }
-                }
-                if(remaining <= 0) break;
-            }
-        }
-    }
-
 
     
 }

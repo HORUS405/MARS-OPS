@@ -5,9 +5,9 @@ package marsops.facilities;
 public class Resource {
  
     private ResourceType type;
-    private double quantity;
+    private int quantity;
 
-    public Resource(ResourceType type , double quantity){
+    public Resource(ResourceType type , int quantity){
         if(type == null)
             throw new IllegalArgumentException("Invalid type!");
         else
@@ -20,15 +20,15 @@ public class Resource {
     {
         return this.type;
     }
-    public double getQuantity()
+    public int getQuantity()
     {
         return this.quantity;
     }
 
-    public void setQuantity(double quantity)
+    public void setQuantity(int quantity)
     {
         
-        if(quantity < 0.0)
+        if(quantity < 0)
             throw new IllegalArgumentException("Invalid Quantity!");
         else
             this.quantity = quantity;
