@@ -1,118 +1,135 @@
 package marsops.emergencies;
 
+import java.util.ArrayList;
 import marsops.colony.MarsColony;
-import marsops.facilities.CommunicationStation;
+import marsops.facilities.Equipment;
 import marsops.facilities.Facility;
-import marsops.facilities.Habitat;
-import marsops.facilities.Laboratory;
-import marsops.facilities.PowerStation;
 import marsops.facilities.ResourceType;
-import marsops.facilities.StorageFacility;
 import marsops.personnel.CrewMember;
-import marsops.personnel.FireFighter;
-import marsops.personnel.MedicalOfficer;
 
 public class FireEmergency extends Emergency {
-    
 
-    public FireEmergency(String location, Severity severity){
+    private static final int FIRE_OXYGEN_LOSS = 5;
+    private static final int REQUIRED_WATER = 5;
+    private static final int REQUIRED_MEDICAL_SUPPLIES = 1;
+
+    public FireEmergency(String location, Severity severity) {
         super(location, severity);
     }
 
+    @Override
+    public void respond(MarsColony colony) {
+        if (colony == null) {
+            throw new IllegalArgumentException("Colony cannot be null");
+        }
 
-    @Override 
-    public void respond(MarsColony colony){
-        if(colony == null) throw new  IllegalArgumentException("Colony cannot be null");
-        boolean firefighterFound = false;
-        boolean medicalOfficerFound = false;
-        boolean facilityFound = false;
-        boolean medicalNeeded = false;
-        setEmergencyStatus(Status.IN_PROGRESS);
-        for (CrewMember member : colony.getCrewMembers()){
-            if( member instanceof FireFighter && member.isAvailable() && member.getHealthStatus().equalsIgnoreCase("Healthy") && member.getFatigueLevel() < 70){
-                FireFighter memFighter = (FireFighter) member;
-                memFighter.setAvailable(false);
-
-                memFighter.performDuty();
-                firefighterFound = true;
+        Facility affectedFacility = null;
+        for (Facility facility : colony.getFacilities()) {
+            if (facility.getFacilityLocation().equalsIgnoreCase(getLocation())
+                    && facility.getFacilityOperationalStatus().equalsIgnoreCase("Operational")) {
+                affectedFacility = facility;
                 break;
             }
         }
-        for (Facility facility : colony.getFacilities()){
-            if( facility instanceof Laboratory ){
-                Laboratory lab = (Laboratory) facility;
-                if(lab.getFacilityLocation().equalsIgnoreCase(getLocation())){
-                    facilityFound = true;
-                    try {
-                        colony.consumeResource(ResourceType.OXYGEN, 5.0);
-                    } catch (IllegalStateException e) {
-                        System.out.println("Warning: Insufficient oxygen during the fire!");
-                    }
-                    lab.setFacilityOperationalStatus("Unavailable");
-                }
-                break;
-            }
-            else if( facility instanceof PowerStation ){
-                PowerStation lab = (PowerStation) facility;
-                if(lab.getFacilityLocation().equalsIgnoreCase(getLocation())){
-                    lab.setFacilityOperationalStatus("Unavailable");
-                    facilityFound = true;
-                }
-            }
-            else if( facility instanceof StorageFacility ){
-                StorageFacility lab = (StorageFacility) facility;
-                if(lab.getFacilityLocation().equalsIgnoreCase(getLocation())){
-                    lab.setFacilityOperationalStatus("Unavailable");
-                    facilityFound = true;
-                }
-            }
-            else if( facility instanceof Habitat ){
-                Habitat lab = (Habitat) facility;
-                if(lab.getFacilityLocation().equalsIgnoreCase(getLocation())){
-                    lab.setFacilityOperationalStatus("Unavailable");
-                    facilityFound = true;
-                }
-            }
-            else if( facility instanceof CommunicationStation ){
-                CommunicationStation lab = (CommunicationStation) facility;
-                if(lab.getFacilityLocation().equalsIgnoreCase(getLocation())){
-                    facilityFound = true;
-                    try {
-                        colony.consumeResource(ResourceType.OXYGEN, 5.0);
-                    } catch (IllegalStateException e) {
-                        System.out.println("Warning: Insufficient oxygen during the fire!");
-                    }
-                    lab.setFacilityOperationalStatus("Unavailable");
-                }
-            }
+        if (affectedFacility == null) {
+            setFailureReason("Relevant facility at " + getLocation() + " is not operational or does not exist.");
+            setEmergencyStatus(Status.UN_RESOLVED);
+            return;
         }
 
+        try {
+            if (colony.hasSufficientResource(ResourceType.OXYGEN, FIRE_OXYGEN_LOSS)) {
+                colony.consumeResource(ResourceType.OXYGEN, FIRE_OXYGEN_LOSS);
+            }
+        } catch (IllegalStateException e) {
+            System.out.println("Warning: Insufficient oxygen during the fire!");
+        }
+
+        affectedFacility.setFacilityOperationalStatus("Unavailable");
+        for (Equipment equipment : affectedFacility.getEquipmentList()) {
+            equipment.setOperationalStatus("Damaged");
+        }
+
+        ArrayList<CrewMember> affectedPersonnel = new ArrayList<>();
         for (CrewMember member : colony.getCrewMembers()) {
-            if (member.getCurrentLocation().equalsIgnoreCase(getLocation())) {
-                medicalNeeded = true;
+            if (member.getCurrentLocation().equalsIgnoreCase(getLocation())
+                    && !member.canHandle(EmergencyType.FIRE)
+                    && !member.canHandle(EmergencyType.MEDICAL)) {
+                member.setHealthStatus("Injured");
+                affectedPersonnel.add(member);
+            }
+        }
+        boolean medicalNeeded = !affectedPersonnel.isEmpty();
+
+        CrewMember fireResponder = null;
+        for (CrewMember member : colony.getCrewMembers()) {
+            if (member.canHandle(EmergencyType.FIRE)) {
+                fireResponder = member;
                 break;
             }
         }
+        if (fireResponder == null) {
+            setFailureReason("No available fire responder.");
+            setEmergencyStatus(Status.UN_RESOLVED);
+            return;
+        }
 
-
-        if(medicalNeeded){
-            for (CrewMember member : colony.getCrewMembers()){
-                if( member instanceof MedicalOfficer && member.isAvailable() && member.getHealthStatus().equalsIgnoreCase("Healthy") && member.getFatigueLevel() < 70){
-                    setEmergencyStatus(Status.IN_PROGRESS);
-                    MedicalOfficer memMedical = (MedicalOfficer) member;
-                    memMedical.setAvailable(false);
-
-                    memMedical.performDuty();
-                    medicalOfficerFound = true;
+        CrewMember medicalResponder = null;
+        if (medicalNeeded) {
+            for (CrewMember member : colony.getCrewMembers()) {
+                if (member != fireResponder && member.canHandle(EmergencyType.MEDICAL)) {
+                    medicalResponder = member;
                     break;
                 }
             }
-        }
-        if (facilityFound && firefighterFound && (!medicalNeeded || medicalOfficerFound)) {
-            setEmergencyStatus(Status.RESOLVED);
-        } else {
-            setEmergencyStatus(Status.UN_RESOLVED);
+            if (medicalResponder == null) {
+                setFailureReason("No available medical responder for personnel injured in the fire.");
+                setEmergencyStatus(Status.UN_RESOLVED);
+                return;
+            }
         }
 
+        if (!colony.hasSufficientResource(ResourceType.WATER, REQUIRED_WATER)) {
+            setFailureReason("Insufficient water to extinguish fire.");
+            setEmergencyStatus(Status.UN_RESOLVED);
+            return;
+        }
+        if (medicalNeeded && !colony.hasSufficientResource(ResourceType.MEDICAL_SUPPLIES, REQUIRED_MEDICAL_SUPPLIES)) {
+            setFailureReason("Insufficient medical supplies for injured personnel.");
+            setEmergencyStatus(Status.UN_RESOLVED);
+            return;
+        }
+
+        setEmergencyStatus(Status.IN_PROGRESS);
+        fireResponder.setCurrentLocation(getLocation());
+        fireResponder.setAvailable(false);
+        if (medicalNeeded && medicalResponder != null) {
+            medicalResponder.setCurrentLocation(getLocation());
+            medicalResponder.setAvailable(false);
+        }
+
+        try {
+            colony.consumeResource(ResourceType.WATER, REQUIRED_WATER);
+            fireResponder.performDuty();
+
+            if (medicalNeeded && medicalResponder != null) {
+                colony.consumeResource(ResourceType.MEDICAL_SUPPLIES, REQUIRED_MEDICAL_SUPPLIES);
+                medicalResponder.performDuty();
+                for (CrewMember injured : affectedPersonnel) {
+                    injured.setHealthStatus("Healthy");
+                }
+            }
+
+            for (Equipment equipment : affectedFacility.getEquipmentList()) {
+                equipment.setOperationalStatus("Operational");
+            }
+            affectedFacility.setFacilityOperationalStatus("Operational");
+            setEmergencyStatus(Status.RESOLVED);
+        } finally {
+            fireResponder.setAvailable(true);
+            if (medicalNeeded && medicalResponder != null) {
+                medicalResponder.setAvailable(true);
+            }
+        }
     }
 }

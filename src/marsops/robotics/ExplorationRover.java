@@ -1,5 +1,7 @@
 package marsops.robotics;
 
+import marsops.emergencies.EmergencyType;
+
 public class ExplorationRover extends Robot {
     
     public ExplorationRover(int batteryLevel , String healthStatus , String currentLocation)
@@ -13,5 +15,10 @@ public class ExplorationRover extends Robot {
         System.out.println("1-Travels across the Martian surface.");
         System.out.println("2-Carries equipment.");
         System.out.println("3-Performs exploration.");
+    }
+
+    @Override
+    public boolean canHandle(EmergencyType type) {
+        return false; // Scientists do research missions, not emergency responses
     }
 }

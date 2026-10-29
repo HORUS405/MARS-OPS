@@ -66,9 +66,6 @@ public abstract class Facility {
             throw new IllegalArgumentException("Equimpent Can't be empty!");
         else this.equipmentList.add(equipment);
     }
-    
-    
-    
 
 
 

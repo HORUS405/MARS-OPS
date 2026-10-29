@@ -1,5 +1,7 @@
 package marsops.robotics;
 
+import marsops.emergencies.EmergencyType;
+
 public abstract class Robot {
 
     
@@ -65,5 +67,11 @@ public abstract class Robot {
 
     //abstract method that will be overriden 
     public abstract void performTask();
+
+        public boolean isUsableAndAvailable() {
+        return isAvailable() && getHealthStatus().equalsIgnoreCase("Healthy") && getBattery() > 20;
+    }
+
+    public abstract boolean canHandle(EmergencyType type);
     
 }

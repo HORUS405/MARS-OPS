@@ -7,11 +7,15 @@ public abstract class Emergency {
 
     private String EmergencyID;
     private String location;
+    private String failureReason;
     private Severity severity;
     private Status status;
     
     
     public Emergency(String location, Severity severity){
+        if(location == null || severity == null){
+            throw new IllegalArgumentException("location and severity cannot be null");
+        }
         UUID uuid = UUID.randomUUID();    
         String uuidString = uuid.toString();
         this.EmergencyID = uuidString;
@@ -38,6 +42,10 @@ public abstract class Emergency {
         return location;
     }
 
+    public String getFailureReason(){
+        return failureReason;
+    }
+
     public void setLocation(String location) {
         this.location = location;
     }
@@ -48,6 +56,9 @@ public abstract class Emergency {
 
     public void setSeverity(Severity severity) {
         this.severity = severity;
+    }
+    public void setFailureReason(String failureReason){
+        this.failureReason = failureReason;
     }
 
     public abstract void respond(MarsColony colony);
