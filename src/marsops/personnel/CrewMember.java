@@ -1,8 +1,7 @@
 
 package marsops.personnel;
 
-
-
+import marsops.emergencies.EmergencyType;
 
 public abstract class CrewMember {
 
@@ -89,7 +88,16 @@ public abstract class CrewMember {
             this.id = id;
     }
     
+    
+
+
     //--> Abstract method that will be overridden <-- 
     public abstract void performDuty();
+
+    public boolean isUsableAndAvailable() {
+        return isAvailable() && getHealthStatus().equalsIgnoreCase("Healthy") && getFatigueLevel() < 70;
+    }
+
+    public abstract boolean canHandle(EmergencyType type);
 
 }
