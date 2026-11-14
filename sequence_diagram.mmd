@@ -1,0 +1,54 @@
+sequenceDiagram
+    autonumber
+    actor Main as User/Main
+    participant Sim as Simulation
+    participant Colony as MarsColony
+    participant Mission as Mission (Exploration/Repair/Research/Rescue)
+    participant Agent as CrewMember/Robot
+    participant Facility as Facility/Equipment
+
+    Main->>Mission: create mission and add agents
+    Main->>Colony: submitMission(mission)
+
+    alt another mission is active
+        Colony->>Mission: failMission(reason: another mission is active)
+        Colony-->>Main: false (mission FAILED, never active)
+    else no active mission
+        Colony->>Mission: validateAndPerformChecks(colony)
+        Mission->>Colony: environment check (canStartSurfaceExploration / isCommunicationAvailable)
+        loop each assigned agent
+            Mission->>Agent: isUsableAndAvailable()
+            Mission->>Agent: canPerform(mission)
+        end
+        Mission->>Facility: required equipment and target operational?
+        Mission->>Colony: hasSufficientResource(type, quantity)
+
+        alt any check failed
+            Mission->>Mission: failMission(reason)
+            Note over Mission,Agent: agents were never reserved, so none are released
+            Mission-->>Colony: false
+            Colony-->>Main: false (mission FAILED, never active)
+        else all checks passed
+            Mission->>Colony: consumeResource(type, quantity)
+            Mission->>Agent: setAvailable(false) and move to destination
+            Mission->>Mission: state = IN_PROGRESS
+            Mission-->>Colony: true
+            Colony->>Colony: activeMission = mission
+            Colony-->>Main: true (mission started)
+        end
+    end
+
+    loop each time unit
+        Main->>Sim: advanceTime(1)
+        Sim->>Colony: advanceMissionTime()
+        Colony->>Mission: advanceTime(colony)
+        Mission->>Mission: checkRunningConditions(colony)
+        alt environment, battery, equipment or communication failure
+            Mission->>Mission: failMission(reason)
+            Mission->>Agent: releaseAgents()
+        else elapsed >= requiredDuration
+            Mission->>Mission: state = COMPLETED
+            Mission->>Agent: releaseAgents()
+        end
+        Colony->>Colony: activeMission = null once the mission is finished
+    end

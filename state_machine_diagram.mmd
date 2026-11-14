@@ -1,0 +1,17 @@
+stateDiagram-v2
+    [*] --> ASSIGNED : mission created with its agents
+    ASSIGNED --> IN_PROGRESS : colony.submitMission() accepted - environment, capability, availability, equipment and resource checks all passed (resources consumed, agents reserved)
+    ASSIGNED --> FAILED : submission rejected - another mission is active, agent unsuitable or unavailable, missing equipment or target, insufficient resources, dust storm (exploration), communication disruption (rescue)
+    IN_PROGRESS --> IN_PROGRESS : advanceTime() [elapsed < required]
+    IN_PROGRESS --> COMPLETED : advanceTime() [elapsed >= required] / release agents
+    IN_PROGRESS --> FAILED : dust storm (rover missions), battery depleted, equipment failure, communication lost (rescue) / release agents
+    COMPLETED --> [*]
+    FAILED --> [*]
+    note right of ASSIGNED
+        A rejected mission goes straight to FAILED.
+        It is never registered as the colony active mission.
+    end note
+    note right of FAILED
+        Failed missions are never retried.
+        A new Mission must be created for another attempt.
+    end note
