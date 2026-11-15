@@ -14,6 +14,11 @@ import marsops.facilities.Laboratory;
 import marsops.facilities.Resource;
 import marsops.facilities.ResourceType;
 import marsops.facilities.StorageFacility;
+import marsops.missions.ExplorationMission;
+import marsops.missions.Mission;
+import marsops.missions.RepairMission;
+import marsops.missions.RescueMission;
+import marsops.missions.ResearchMission;
 import marsops.personnel.CrewMember;
 import marsops.personnel.Engineer;
 import marsops.personnel.FireFighter;
@@ -195,5 +200,93 @@ public class Main {
         colony.setEnvironmentalCondition(EnvironmentalCondition.NORMAL);
         System.out.println();
         colony.printResourceReport();
+
+        System.out.println("\n==================================================");
+        System.out.println("8. TESTING MISSIONS (EXPLORATION, RESEARCH, REPAIR, RESCUE)");
+        System.out.println("==================================================");
+
+        // Ensure crew members are healthy and rested before starting missions
+        scientist.setHealthStatus("Healthy");
+        scientist.setFatigueLevel(10);
+        scientist.setAvailable(true);
+        firefighter.setHealthStatus("Healthy");
+        firefighter.setFatigueLevel(15);
+        firefighter.setAvailable(true);
+        rover.setHealthStatus("Healthy");
+        rover.setAvailable(true);
+        for (Equipment eq : lab1.getEquipmentList()) {
+            eq.setOperationalStatus("Operational");
+        }
+
+        // 8.1 Exploration Mission (Success)
+        ExplorationMission expMission = new ExplorationMission("EXP-01", 2, "Sector-4", 5, "Spectrometer");
+        expMission.addCrewMember(scientist);
+        expMission.addRobot(rover);
+        runMission(colony, expMission);
+
+        // 8.2 Research Mission (Success)
+        ResearchMission resMission = new ResearchMission("RES-01", 2, lab1, "Spectrometer", 2);
+        resMission.addCrewMember(scientist);
+        runMission(colony, resMission);
+
+        // 8.3 Repair Mission (Success)
+        RepairMission repMission = new RepairMission("REP-01", 2, habitatA, 2, 1);
+        repMission.addCrewMember(engineer);
+        repMission.addRobot(repairBot);
+        runMission(colony, repMission);
+
+        // 8.4 Rescue Mission (Success)
+        RescueMission rscMission = new RescueMission("RSC-01", 2, "Crater-7", 5, 2);
+        rscMission.addCrewMember(medic);
+        rscMission.addCrewMember(firefighter);
+        rscMission.addRobot(drone);
+        runMission(colony, rscMission);
+
+        // 8.5 Mission Rejection (Unsuitable Agent)
+        ExplorationMission unsuitableExp = new ExplorationMission("EXP-UNSUITABLE", 2, "Sector-8", 1, "Spectrometer");
+        unsuitableExp.addCrewMember(firefighter);
+        unsuitableExp.addRobot(rover);
+        runMission(colony, unsuitableExp);
+
+        // 8.6 Exploration Mission blocked by Dust Storm
+        colony.setEnvironmentalCondition(EnvironmentalCondition.DUST_STORMS);
+        ExplorationMission blockedExp = new ExplorationMission("EXP-02", 2, "Sector-9", 1, "Spectrometer");
+        blockedExp.addCrewMember(scientist);
+        blockedExp.addRobot(rover);
+        runMission(colony, blockedExp);
+
+        // 8.6 Active Exploration Mission interrupted by Dust Storm mid-execution
+        colony.setEnvironmentalCondition(EnvironmentalCondition.NORMAL);
+        ExplorationMission interruptedExp = new ExplorationMission("EXP-03", 3, "Sector-5", 1, "Spectrometer");
+        interruptedExp.addCrewMember(scientist);
+        interruptedExp.addRobot(rover);
+        if (colony.submitMission(interruptedExp)) {
+            colony.advanceMissionTime();
+            System.out.println(interruptedExp.getMissionId() + " state after 1 step: " + interruptedExp.getState());
+            colony.setEnvironmentalCondition(EnvironmentalCondition.DUST_STORMS);
+            System.out.println(interruptedExp.getMissionId() + " state after storm: " + interruptedExp.getState()
+                    + " | Reason: " + interruptedExp.getFailureReason()
+                    + " | Scientist Available: " + scientist.isAvailable()
+                    + " | Rover Available: " + rover.isAvailable());
+        }
+        colony.setEnvironmentalCondition(EnvironmentalCondition.NORMAL);
+
+        System.out.println();
+        colony.printResourceReport();
+    }
+
+    private static void runMission(MarsColony colony, Mission mission) {
+        boolean started = colony.submitMission(mission);
+        if (!started) {
+            System.out.println(mission.getMissionId() + " [" + mission.getMissionType() + "] -> "
+                    + mission.getState() + " | Reason: " + mission.getFailureReason());
+            return;
+        }
+        while (colony.hasActiveMission()) {
+            colony.advanceMissionTime();
+        }
+        System.out.println(mission.getMissionId() + " [" + mission.getMissionType() + "] -> "
+                + mission.getState() + " (" + mission.getElapsedDuration() + "/" + mission.getRequiredDuration() + ")"
+                + (mission.getFailureReason().isEmpty() ? "" : " | Reason: " + mission.getFailureReason()));
     }
 }

@@ -1,6 +1,7 @@
 package marsops.robotics;
 
 import marsops.emergencies.EmergencyType;
+import marsops.missions.Mission;
 
 public abstract class Robot {
 
@@ -65,7 +66,7 @@ public abstract class Robot {
         this.available = available;
     }
 
-    //abstract method that will be overriden 
+    
     public abstract void performTask();
 
         public boolean isUsableAndAvailable() {
@@ -73,5 +74,8 @@ public abstract class Robot {
     }
 
     public abstract boolean canHandle(EmergencyType type);
+
+    // Each robot answers whether it is a suitable unit for the given mission.
+    public abstract boolean canPerform(Mission mission);
     
 }

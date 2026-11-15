@@ -1,0 +1,36 @@
+sequenceDiagram
+    autonumber
+    actor User/Main
+    participant Colony as MarsColony
+    participant Mission as Exploration/RepairMission
+    participant Agent as CrewMember/Robot
+    participant Facility as Facility/Resource
+
+    User/Main->>Mission: create Mission & assign Agents
+    User/Main->>Mission: validateAndPerformChecks(colony)
+    
+    Mission->>Colony: check Colony conditions & Resources
+    Colony-->>Mission: conditions valid & resources sufficient
+    
+    loop For each Assigned Agent
+        Mission->>Agent: isUsableAndAvailable() & canPerform(this)
+        Agent-->>Mission: true (ready)
+    end
+    
+    alt All Checks Passed
+        Mission->>Colony: consumeResource(...)
+        Mission->>Agent: setAvailable(false) & update location
+        Mission->>Mission: setState(IN_PROGRESS)
+        Mission-->>User/Main: return true (Mission Started)
+    else Checks Failed
+        Mission->>Mission: failMission(reason)
+        Mission->>Agent: releaseAgents()
+        Mission-->>User/Main: return false (Mission Failed)
+    end
+
+    Note over Mission,Colony: During execution time loop:
+    User/Main->>Mission: advanceTime(colony)
+    alt elapsedDuration >= requiredDuration
+        Mission->>Mission: setState(COMPLETED)
+        Mission->>Agent: releaseAgents() (available = true)
+    end

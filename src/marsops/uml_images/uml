@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> ASSIGNED : Create Mission
+    ASSIGNED --> IN_PROGRESS : validateAndPerformChecks() == true
+    ASSIGNED --> FAILED : validateAndPerformChecks() == false (Fail Reason & Release Agents)
+    IN_PROGRESS --> IN_PROGRESS : advanceTime() (Duration < Required)
+    IN_PROGRESS --> COMPLETED : advanceTime() (Duration >= Required & Release Agents)
+    IN_PROGRESS --> FAILED : Emergency / Abort (Release Agents)
+    COMPLETED --> [*]
+    FAILED --> [*]

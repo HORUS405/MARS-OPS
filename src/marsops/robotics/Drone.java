@@ -1,6 +1,7 @@
 package marsops.robotics;
 
 import marsops.emergencies.EmergencyType;
+import marsops.missions.Mission;
 
 public class Drone extends Robot {
 
@@ -18,5 +19,12 @@ public class Drone extends Robot {
     @Override
     public boolean canHandle(EmergencyType type) {
         return false; // Scientists do research missions, not emergency responses
+    }
+
+    @Override
+    public boolean canPerform(Mission mission) {
+        return mission != null
+                && (Mission.EXPLORATION.equals(mission.getMissionType())
+                        || Mission.RESCUE.equals(mission.getMissionType()));
     }
 }
