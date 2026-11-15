@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import marsops.facilities.Facility;
 import marsops.facilities.Resource;
 import marsops.facilities.ResourceType;
+import marsops.missions.Mission;
 import marsops.personnel.CrewMember;
 import marsops.robotics.Robot;
 
@@ -14,6 +15,7 @@ public class MarsColony {
     private ArrayList<Facility> facilities;
     private ArrayList<Robot> robots;
     private EnvironmentalCondition environmentalCondition;
+    private Mission activeMission;
 
 
     public MarsColony() {
@@ -34,15 +36,66 @@ public class MarsColony {
 
         if (this.environmentalCondition == EnvironmentalCondition.DUST_STORMS) {
             System.out.println("Environmental Update [DUST_STORMS]: Surface exploration missions cannot begin and active rover missions fail.");
-            for (Robot robot : robots) {
-                if (robot.getCurrentLocation().equalsIgnoreCase("Surface") && !robot.isAvailable()) {
-                    robot.setAvailable(true);
-                }
-            }
         } else if (this.environmentalCondition == EnvironmentalCondition.COMMUNICATION_DISRUPTION) {
             System.out.println("Environmental Update [COMMUNICATION_DISRUPTION]: Remote drones cannot be controlled and communication-dependent operations are restricted.");
         } else {
             System.out.println("Environmental Update [NORMAL]: Normal colony operations resumed.");
+        }
+
+        // The active mission decides whether the new condition makes it fail (e.g. dust storm and rover missions).
+        if (activeMission != null) {
+            activeMission.onEnvironmentChanged(this);
+            clearActiveMissionIfFinished();
+        }
+    }
+
+    // ---------------------------------------------------------------- missions (owned by the colony)
+
+    public Mission getActiveMission() {
+        clearActiveMissionIfFinished();
+        return activeMission;
+    }
+
+    public boolean hasActiveMission() {
+        return getActiveMission() != null;
+    }
+
+    /**
+     * Only one mission can be active at a time. A rejected mission becomes FAILED immediately
+     * with a clear reason (see Mission.getFailureReason) and never becomes active.
+     * A mission that was already submitted, started or finished is never retried.
+     */
+    public boolean submitMission(Mission mission) {
+        if (mission == null) {
+            throw new IllegalArgumentException("Null Mission!");
+        }
+        clearActiveMissionIfFinished();
+        if (mission.getState() != Mission.MissionState.ASSIGNED) {
+            return false;
+        }
+        if (activeMission != null) {
+            mission.failMission("Another mission is already active (" + activeMission.getMissionId() + ").");
+            return false;
+        }
+        if (!mission.validateAndPerformChecks(this)) {
+            return false;
+        }
+        activeMission = mission;
+        return true;
+    }
+
+    // One simulation time unit for the active mission; the mission is cleared once it completes or fails.
+    public void advanceMissionTime() {
+        clearActiveMissionIfFinished();
+        if (activeMission != null) {
+            activeMission.advanceTime(this);
+            clearActiveMissionIfFinished();
+        }
+    }
+
+    private void clearActiveMissionIfFinished() {
+        if (activeMission != null && activeMission.isFinished()) {
+            activeMission = null;
         }
     }
 

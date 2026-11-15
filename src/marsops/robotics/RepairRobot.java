@@ -1,6 +1,7 @@
 package marsops.robotics;
 
 import marsops.emergencies.EmergencyType;
+import marsops.missions.Mission;
 
 public class RepairRobot extends Robot{
 
@@ -19,6 +20,11 @@ public class RepairRobot extends Robot{
     public boolean canHandle(EmergencyType type) {
         return isUsableAndAvailable()
                 && (type == EmergencyType.OXYGEN_LEAK || type == EmergencyType.ROVER_BREAKDOWN);
+    }
+
+    @Override
+    public boolean canPerform(Mission mission) {
+        return mission != null && Mission.REPAIR.equals(mission.getMissionType());
     }
 }
 

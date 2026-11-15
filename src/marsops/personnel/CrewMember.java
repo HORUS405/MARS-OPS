@@ -2,6 +2,7 @@
 package marsops.personnel;
 
 import marsops.emergencies.EmergencyType;
+import marsops.missions.Mission;
 
 public abstract class CrewMember {
 
@@ -91,7 +92,6 @@ public abstract class CrewMember {
     
 
 
-    //--> Abstract method that will be overridden <-- 
     public abstract void performDuty();
 
     public boolean isUsableAndAvailable() {
@@ -99,5 +99,8 @@ public abstract class CrewMember {
     }
 
     public abstract boolean canHandle(EmergencyType type);
+
+    // Each crew member answers whether it can take part in the given mission (no type checks in Mission).
+    public abstract boolean canPerform(Mission mission);
 
 }
